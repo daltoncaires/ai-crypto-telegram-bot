@@ -1,0 +1,227 @@
+{
+  "name": "SmartGecko",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fad9d764-280d-4795-af88-d6b8d54c6359",
+      "name": "Telegram Trigger",
+      "webhookId": "c3d49180-99fb-415e-8b87-9a5787e75cf9",
+      "credentials": {
+        "telegramApi": {
+          "id": "cv4xtPb24cRVAEe5",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Telegram Trigger').item.json.message.text }}",
+        "options": {
+          "systemMessage": "You are an expert cryptocurrency assistant. You provide short and insightful summaries on the status of the cryptocurrency market by focusing on the top 10 gainers and losers in the last 24 hours, as numbered lists.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "9de963dd-edf6-4fff-ac46-da522b6d085b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        208
+      ],
+      "id": "97d3cfb7-ca17-403f-900e-4260d1f759be",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "h4YkivBVsvYqNaDw",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "https://mcp.api.coingecko.com/sse"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        560,
+        208
+      ],
+      "id": "dcf7beaa-fae5-488a-8017-df89f6c079cb",
+      "name": "MCP Client",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        0
+      ],
+      "id": "1d1a29d6-c3cc-4435-8b63-6bbe25ec3913",
+      "name": "Send a text message",
+      "webhookId": "738c1a69-e82f-437d-9344-bdbc1027bb0a",
+      "credentials": {
+        "telegramApi": {
+          "id": "cv4xtPb24cRVAEe5",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $execution.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        208
+      ],
+      "id": "633bb3d3-54f7-471e-80cc-89c0f9a1df80",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.message.chat.id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        -144
+      ],
+      "id": "7ef26444-fd72-44b9-ad81-61d44740dd6c",
+      "name": "Send a chat action",
+      "webhookId": "d9d2917a-8e9e-41d8-a339-6728276724f5",
+      "credentials": {
+        "telegramApi": {
+          "id": "cv4xtPb24cRVAEe5",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a chat action",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a chat action": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3002c1c9-6fc8-4a75-af01-acedb3b505bc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "deb32619a842e0a2fe75826c1c54df4da38cfaab02b506347871236c0aa89eb6"
+  },
+  "id": "6OkvP5zUXF84NYFX",
+  "tags": []
+}
